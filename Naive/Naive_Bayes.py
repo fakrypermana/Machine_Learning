@@ -59,6 +59,7 @@ def mean(numbers):
     return sum(numbers)/len(numbers)
 
 def var(numbers):
+    print('ini numbers',numbers)
     avg = mean(numbers)
     # variance = sum([pow(x-avg,2) for x in numbers])/(float(len(numbers)-1))
     a = []
@@ -78,13 +79,21 @@ def getModel(dataset,y):
         summaries.append((mean(x), var(x)))
     # delete the last index because its y value is the data class
     del summaries[-1]
+    print('ini summaries',summaries)
     return summaries
 
 def modelByClass(dataset):
+    n = 0
     model = {}
+    print("type class dataset from model",dataset.items())
     for y, xs in dataset.items():
-        # print('dataset[{1}]: {0}').format(xs,y)
-        model[y] = getModel(xs,int(y))
+        print('ini y',y)
+        # print(('dataset[{1}]: {0}').format(xs,y))
+        if(y == '>50K'):
+            n = 0
+        elif(y == '<=50K'):
+            n = 1
+        model[n] = getModel(xs,int(n))
     return model
 
 def probabilities(x,mean,variance):
@@ -148,7 +157,7 @@ def main():
             testPredict = predictAll(modelDataset,dataset)
             # Separate by y value and print total of each y
             testSeparatedDataset = separateByClass(testPredict)
-            for y, xs in testSeparatedDataset.iteritems():
+            for y, xs in testSeparatedDataset.items():
                 print('y[{0}]: {1}').format(y,len(xs))
             # close file
             csvfile.close()
