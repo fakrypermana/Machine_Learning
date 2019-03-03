@@ -2,6 +2,10 @@ import csv
 import random
 import math
 import copy
+from collections import defaultdict
+
+import numpy as np
+import pandas as pd
 # ------------------------------------------------------
 # TODO : main program
 # ------------------------------------------------------
@@ -35,41 +39,68 @@ def readTestFile(csvfile):
         dataset.append(inp)
     return dataset
 
-# TO split into learn and train
-def splitDataset(dataset, splitRatio):
-    learnSize = int(len(dataset) * splitRatio)
-    learns = []
-    trains = list(dataset)
-    while len(learns) < learnSize:
-        index = random.randrange(len(trains))
-        learns.append(trains.pop(index))
-    return [learns, trains]
-
 # TO separate dataset by class value
 def separateByClass(dataset):
     separated = {}
     for i in range(len(dataset)):
         vector = dataset[i]
-        print('vector & separated',vector[1],'---',separated)
         if (vector[-1] not in separated):
             separated[vector[-1]] = []
         separated[vector[-1]].append(vector)
     return separated
 
+def underBaseCount(dataset, separateSet):
+    separateClass = separateByClass(dataset)
+    return len(separateClass[separateSet])/len(dataset)
+
+def baseCount(dataset, separatedSet, label):
+    sum = 0
+    for i in range(len(dataset)):
+        for j in range(0,len(dataset[i])-1):
+            if(dataset[i][j] == label and dataset[i][7] == separatedSet):
+                sum = sum + 1
+    return sum
+
+def generalCount(dataset, separateSet, label):
+    sum = underBaseCount(dataset,separateSet)
+    return baseCount(dataset,separateSet,label)/sum
+
+def result(dataset, separateSet, dataTest):
+    sum = 1
+    arr = []
+    for i in range(len(dataTest)):
+        for j in range(len(dataset[i])-1):
+            sum = sum * generalCount(dataset,separateSet,dataTest[i][j])
+        sum = sum * underBaseCount(dataset,separateSet)
+        arr.append(sum)
+        sum = 1
+    return arr
+
+def separateResult(arrHigh,arrLow):
+    arrResult = []
+    for i in range(len(arrHigh)):
+        if arrHigh[i] > arrLow[i]:
+            arrResult.append('>50K')
+        else:
+            arrResult.append('<=50K')
+    return arrResult
+
+def resultInCsv(result):
+    with open('./TebakanTugas1ML.csv', 'w', newline='') as csvfile:
+        fieldnames = ['result']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for x in range(0, len(result)):
+            writer.writerow({'result':result[x]})
 
 def main():
-    # open file
-    splitRatio = 0.75
     with open('TrainsetTugas1ML.csv', 'rt') as csvfile:
         print('1. Please wait ...')
-        # Get Data
         dataset = readFile(csvfile)
-        # Split into learn and train
-        learnDataset, trainDataset = splitDataset(dataset,splitRatio)
-        print(('Split {0} rows into learn={1} and train={2} rows').format(len(dataset), len(learnDataset), len(trainDataset)))
-        # Split learnDataset by output y
-        learnSeparatedDataset = separateByClass(learnDataset)
-        print(learnSeparatedDataset)
-
-
+        with open('TestsetTugas1ML.csv', 'rt') as csvfile:
+            dataTest = readTestFile(csvfile)
+            arrHigh = result(dataset,">50K",dataTest)
+            arrLow = result(dataset,"<=50K",dataTest)
+            hasil = separateResult(arrHigh,arrLow)
+            resultInCsv(hasil)
 main()
